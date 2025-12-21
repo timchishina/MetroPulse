@@ -359,3 +359,100 @@
     - `valid_from <= start_time < valid_to`.
 
 Так мы гарантируем корректную стоимость/характеристики маршрута на момент каждой поездки.
+
+```markdown
+```mermaid
+erDiagram
+
+    %% === DIMENSIONS ===
+    dim_user {
+        BIGINT user_sk PK
+        INT user_id_nk "натуральный ключ (USERS.user_id)"
+        VARCHAR name
+        VARCHAR email
+        VARCHAR city
+        TIMESTAMP created_at
+    }
+
+    dim_route {
+        BIGINT route_sk PK
+        INT route_id_nk "натуральный ключ (ROUTES.route_id)"
+        VARCHAR route_number
+        VARCHAR vehicle_type
+        NUMERIC base_fare
+        TIMESTAMP valid_from
+        TIMESTAMP valid_to
+        BOOLEAN is_current
+    }
+
+    dim_vehicle {
+        BIGINT vehicle_sk PK
+        INT vehicle_id_nk "натуральный ключ (VEHICLES.vehicle_id)"
+        INT route_id_nk
+        VARCHAR license_plate
+        INT capacity
+    }
+
+    dim_datetime {
+        BIGINT time_sk PK
+        TIMESTAMP ts
+        DATE date
+        INT year
+        INT month
+        INT day
+        INT hour
+        INT minute
+        INT day_of_week
+        BOOLEAN is_weekend
+    }
+
+    %% === FACTS ===
+    fact_ride {
+        UUID ride_id_nk PK "натуральный ключ (RIDES.ride_id)"
+        BIGINT user_sk FK
+        BIGINT route_sk FK
+        BIGINT vehicle_sk FK
+        BIGINT start_time_sk FK
+        BIGINT end_time_sk FK
+        NUMERIC fare_amount
+        INT ride_duration_sec
+        TIMESTAMP load_dt
+    }
+
+    fact_payment {
+        UUID payment_id_nk PK "натуральный ключ (PAYMENTS.payment_id)"
+        BIGINT user_sk FK
+        UUID ride_id_nk "degenerate key (RIDES.ride_id)"
+        BIGINT time_sk FK
+        NUMERIC amount
+        VARCHAR payment_method
+        VARCHAR status
+        TIMESTAMP load_dt
+    }
+
+    fact_vehicle_movement {
+        BIGINT id PK
+        BIGINT vehicle_sk FK
+        BIGINT route_sk FK
+        BIGINT time_sk FK
+        NUMERIC avg_speed_kmh
+        NUMERIC max_speed_kmh
+        NUMERIC avg_passengers_estimated
+        INT events_count
+        TIMESTAMP load_dt
+    }
+
+    %% === RELATIONSHIPS ===
+    dim_user ||--o{ fact_ride : "user_sk"
+    dim_route ||--o{ fact_ride : "route_sk"
+    dim_vehicle ||--o{ fact_ride : "vehicle_sk"
+    dim_datetime ||--o{ fact_ride : "start_time_sk"
+    dim_datetime ||--o{ fact_ride : "end_time_sk"
+
+    dim_user ||--o{ fact_payment : "user_sk"
+    dim_datetime ||--o{ fact_payment : "time_sk"
+
+    dim_vehicle ||--o{ fact_vehicle_movement : "vehicle_sk"
+    dim_route   ||--o{ fact_vehicle_movement : "route_sk"
+    dim_datetime ||--o{ fact_vehicle_movement : "time_sk"
+```
