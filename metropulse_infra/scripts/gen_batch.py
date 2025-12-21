@@ -123,7 +123,7 @@ def generate_data():
         })
 
         # Payments
-        # Fields: payment_id (uuid), ride_id, amount, method, status, time
+        # Fields: payment_id (uuid), ride_id, user_id, amount, method, status, time
         if random.random() > 0.05: # 95% successful payments
             status = "success"
         else:
@@ -132,6 +132,7 @@ def generate_data():
         payments.append({
             "payment_id": str(uuid.uuid4()),
             "ride_id": ride_uuid,
+            "user_id": user['user_id'],
             "amount": route['base_fare'],
             "payment_method": random.choice(["card", "qr", "app_balance"]),
             "status": status,
