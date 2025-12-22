@@ -62,7 +62,7 @@ def generate_data():
     routes_data = [
         {"route_id": 1, "route_number": "105", "vehicle_type": "bus", "base_fare": 50},
         {"route_id": 2, "route_number": "17", "vehicle_type": "tram", "base_fare": 45},
-        {"route_id": 3, "route_number": "M4", "vehicle_type": "subway", "base_fare": 60},
+        {"route_id": 3, "route_number": "А-72", "vehicle_type": "metro", "base_fare": 60},
         {"route_id": 4, "route_number": "404", "vehicle_type": "bus", "base_fare": 55},
     ]
     df_routes = pd.DataFrame(routes_data)
@@ -72,7 +72,7 @@ def generate_data():
     # Fields: vehicle_id, route_id, license_plate, capacity
     print("Generating Vehicles...")
     vehicles = []
-    vehicle_id_counter = 1000
+    vehicle_id_counter = 100
     route_vehicle_map = {}
 
     for r in routes_data:
@@ -134,7 +134,7 @@ def generate_data():
             "ride_id": ride_uuid,
             "user_id": user['user_id'],
             "amount": route['base_fare'],
-            "payment_method": random.choice(["card", "qr", "app_balance"]),
+            "payment_method": random.choice(["card", "sbp", "wallet"]),
             "status": status,
             "created_at": trip_end + timedelta(seconds=random.randint(1, 60))
         })
