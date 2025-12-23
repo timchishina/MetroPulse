@@ -10,17 +10,20 @@ services:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ../stanging.sql:/docker-entrypoint-initdb.d/01-staging.sql
+      - ../core_dwh.sql:/docker-entrypoint-initdb.d/02-core-dwh.sql
+      - ../facts_core_dwh.sql:/docker-entrypoint-initdb.d/03-facts-dwh.sql
 
   minio:
     image: minio/minio
     container_name: mp_minio
     ports:
-      - "9005:9000" # API port
-      - "9001:9001" # console port
+      - "19000:9000" # API port
+      - "19001:9001" # console port
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":9001" --address ":9000"
     volumes:
       - minio_data:/data
 
@@ -60,24 +63,66 @@ services:
       - ch_data:/var/lib/clickhouse
 
   spark-master:
-    image: spark:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: mp_spark_master
+    hostname: spark-master
+    user: root
     environment:
-      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - HOME=/home/spark
+      - SPARK_DAEMON_MEMORY=4g
+      - SPARK_DRIVER_MEMORY=4g
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET=raw-data
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_DB=metropulse_dwh
+      - PG_USER=user
+      - PG_PASSWORD=password
     ports:
       - "8080:8080"
       - "7077:7077"
+    volumes:
+      - ./etl:/opt/spark/etl
+      - spark_ivy_cache:/home/spark/.ivy2
+      - ./scripts:/opt/spark/scripts 
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
 
   spark-worker:
-    image: spark:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: mp_spark_worker
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
+    user: root
     depends_on:
       - spark-master
+    environment:
+      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=6g
+      - HOME=/home/spark
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET=raw-data
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_DB=metropulse_dwh
+      - PG_USER=user
+      - PG_PASSWORD=password
+    volumes:
+      - ./etl:/opt/spark/etl
+      - spark_ivy_cache:/home/spark/.ivy2
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
 
 volumes:
   pg_data:
   minio_data:
   ch_data:
+  spark_ivy_cache:

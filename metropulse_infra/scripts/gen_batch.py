@@ -5,12 +5,15 @@ from faker import Faker
 from datetime import datetime, timedelta
 from minio import Minio
 import io
+import os
 
 # MinIO configuration
-MINIO_ENDPOINT = "localhost:9005"
-ACCESS_KEY = "minioadmin"
-SECRET_KEY = "minioadmin"
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "mp_minio:9000")
+ACCESS_KEY = os.getenv("MINIO_ROOT_USER", "minioadmin")
+SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin")
 BUCKET_NAME = "raw-data"
+
+print(f"Connecting to MinIO at: {MINIO_ENDPOINT}...")
 
 client = Minio(
     MINIO_ENDPOINT,
@@ -22,6 +25,10 @@ client = Minio(
 fake = Faker('ru_RU')
 
 def upload_df_to_minio(df, object_name):
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].astype('datetime64[us]')
+
     parquet_buffer = io.BytesIO()
     df.to_parquet(parquet_buffer, index=False)
     parquet_buffer.seek(0)

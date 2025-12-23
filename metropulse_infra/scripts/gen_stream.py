@@ -2,11 +2,12 @@ import json
 import time
 import random
 import uuid
+import os
 from kafka import KafkaProducer
 from datetime import datetime
 
 # Kafka configuration
-KAFKA_BOOTSTRAP_SERVERS = ['localhost:9092']
+KAFKA_BOOTSTRAP_SERVERS = [os.getenv("KAFKA_BOOTSTRAP_SERVERS", "mp_kafka:29092")]
 TOPIC_NAME = 'vehicle_positions'
 
 producer = KafkaProducer(

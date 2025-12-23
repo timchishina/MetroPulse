@@ -1,5 +1,8 @@
-faker
+pyspark==3.5.0
+psycopg2-binary
 pandas
-pyarrow
+boto3
 minio
+faker
 kafka-python
+pyarrow
