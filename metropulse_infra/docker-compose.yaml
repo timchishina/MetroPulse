@@ -18,12 +18,12 @@ services:
     image: minio/minio
     container_name: mp_minio
     ports:
-      - "9005:9000" # API port
-      - "9001:9001" # console port
+      - "19000:9000" # API port
+      - "19001:9001" # console port
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":9001" --address ":9000"
     volumes:
       - minio_data:/data
 
@@ -74,6 +74,8 @@ services:
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_SSL_ENABLED=no
       - HOME=/home/spark
+      - SPARK_DAEMON_MEMORY=4g
+      - SPARK_DRIVER_MEMORY=4g
       - S3_ENDPOINT=http://minio:9000
       - S3_ACCESS_KEY=minioadmin
       - S3_SECRET_KEY=minioadmin
@@ -89,6 +91,7 @@ services:
     volumes:
       - ./etl:/opt/spark/etl
       - spark_ivy_cache:/home/spark/.ivy2
+      - ./scripts:/opt/spark/scripts 
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
 
   spark-worker:
@@ -100,8 +103,8 @@ services:
     depends_on:
       - spark-master
     environment:
-      - SPARK_WORKER_CORES=1
-      - SPARK_WORKER_MEMORY=1g
+      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=6g
       - HOME=/home/spark
       - SPARK_MASTER_URL=spark://spark-master:7077
       - S3_ENDPOINT=http://minio:9000
